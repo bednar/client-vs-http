@@ -124,6 +124,8 @@ public class Benchmark {
 
             @Override
             void finished() {
+                client.dispatcher().executorService().shutdown();
+                client.connectionPool().evictAll();
             }
         };
 
