@@ -6,8 +6,6 @@ Clone and run
 
 ```shell script
 mvn clean compile assembly:single
-
-java -jar target/client-vs-http-jar-with-dependencies.jar -help
 ```                                                            
 
 ```shell script
@@ -19,5 +17,13 @@ usage: java -cp target/client-vs-http-jar-with-dependencies.jar [-help] [-linePr
  -lineProtocolsCount <arg>   how much data writes in one batch
  -secondsCount <arg>         how long write into InfluxDB
  -threadsCount <arg>         how much Thread use to write into InfluxDB
- -type <arg>                 Type of writer (default "CLIENT"; CLIENT, HTTP)
+ -type <arg>                 Type of writer (default 'CLIENT'; CLIENT, HTTP)
+```          
+
+## Run
+
+Show _error_ log from InfluxDB 1.x
+
+```shell script
+docker logs -f influxdb 2>&1| grep -v "204"
 ```
