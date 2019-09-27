@@ -38,7 +38,7 @@ public class Benchmark {
         Options cmdOptions = new Options();
 
         cmdOptions.addOption(Option.builder("help").desc("Print this help").hasArg(false).build());
-        cmdOptions.addOption(Option.builder("type").desc("Type of writer (default \"CLIENT\"; CLIENT, HTTP)").hasArg().build());
+        cmdOptions.addOption(Option.builder("type").desc("Type of writer (default \"CLIENT_V1\"; CLIENT_V1, HTTP_V1)").hasArg().build());
         cmdOptions.addOption(Option.builder("threadsCount").desc("how much Thread use to write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("secondsCount").desc("how long write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("lineProtocolsCount").desc("how much data writes in one batch").hasArg().build());
@@ -53,14 +53,14 @@ public class Benchmark {
             return;
         }
 
-        String type = line.getOptionValue("type", "CLIENT");
+        String type = line.getOptionValue("type", "CLIENT_V1");
         System.out.println();
         System.out.println("------------- " + type + " -------------");
         System.out.println();
 
-        if ("CLIENT".equals(type)) {
+        if ("CLIENT_V1".equals(type)) {
             client(line);
-        } else if ("HTTP".equals(type)) {
+        } else if ("HTTP_V1".equals(type)) {
             http(line);
         } else {
             throw new ParseException("The: " + type + " is not supported");
