@@ -24,7 +24,7 @@ import org.apache.commons.lang3.time.StopWatch;
 /**
  * Write data into InfluxDB through client.
  */
-@SuppressWarnings({"UnstableApiUsage", "StatementWithEmptyBody"})
+@SuppressWarnings({"UnstableApiUsage"})
 public class Benchmark {
 
     private static final String INFLUX_DB_URL = "http://localhost:8086";
@@ -38,7 +38,7 @@ public class Benchmark {
         Options cmdOptions = new Options();
 
         cmdOptions.addOption(Option.builder("help").desc("Print this help").hasArg(false).build());
-        cmdOptions.addOption(Option.builder("type").desc("Type of writer (default \"CLIENT_V1\"; CLIENT_V1, HTTP_V1)").hasArg().build());
+        cmdOptions.addOption(Option.builder("type").desc("Type of writer (default \"CLIENT_V1\"; CLIENT_V1, CLIENT_V1_OPTIMIZED, HTTP_V1)").hasArg().build());
         cmdOptions.addOption(Option.builder("threadsCount").desc("how much Thread use to write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("secondsCount").desc("how long write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("lineProtocolsCount").desc("how much data writes in one batch").hasArg().build());
@@ -58,77 +58,86 @@ public class Benchmark {
         System.out.println("------------- " + type + " -------------");
         System.out.println();
 
+        AbstractIOTWriter writer;
         if ("CLIENT_V1".equals(type)) {
-            client(line);
+            writer = new Client_V1(line);
+        } else if ("CLIENT_V1_OPTIMIZED".equals(type)) {
+            BatchOptionsReactive batchOptions = BatchOptionsReactive.builder()
+                    .bufferLimit(100_000_000)
+                    .batchSize(200_000)
+                    .flushInterval(10)
+                    .build();
+            writer = new Client_V1(line, batchOptions);
         } else if ("HTTP_V1".equals(type)) {
-            http(line);
+            writer = new HTTP_V1(line);
         } else {
             throw new ParseException("The: " + type + " is not supported");
         }
+
+        writer.start().verify();
 
         stopWatch.stop();
         System.out.println();
         System.out.println("Total time: " + stopWatch.toString());
     }
 
-    private static void client(final CommandLine line) {
+    private static class Client_V1 extends AbstractIOTWriter {
+        private final InfluxDBReactive client;
 
-        InfluxDBOptions options = InfluxDBOptions.builder()
-                .url(INFLUX_DB_URL)
-                .database(INFLUX_DB_DATABASE)
-                .precision(TimeUnit.SECONDS)
-                .build();
+        Client_V1(final CommandLine line) {
+            this(line, BatchOptionsReactive.builder().bufferLimit(100_000_000).build());
+        }
 
-        BatchOptionsReactive batchOptions = BatchOptionsReactive.builder()
-                .bufferLimit(6_000_000)
-                .build();
+        Client_V1(final CommandLine line, final BatchOptionsReactive batchOptions) {
+            super(line);
 
-        InfluxDBReactive client = InfluxDBReactiveFactory.connect(options, batchOptions);
+            InfluxDBOptions options = InfluxDBOptions.builder()
+                    .url(INFLUX_DB_URL)
+                    .database(INFLUX_DB_DATABASE)
+                    .precision(TimeUnit.SECONDS)
+                    .build();
 
-        AbstractIOTWriter writer = new AbstractIOTWriter(line) {
-            @Override
-            void writeRecord(final String records) {
-                client.writeRecord(records);
-            }
+            client = InfluxDBReactiveFactory.connect(options, batchOptions);
+        }
 
-            @Override
-            void finished() {
-                client.close();
-                while (!client.isClosed()) {
-                }
-            }
-        };
+        @Override
+        void writeRecord(final String records) {
+            client.writeRecord(records);
+        }
 
-        writer.start().verify();
+        @Override
+        void finished() {
+            client.close();
+        }
     }
 
-    private static void http(final CommandLine line) {
+    private static class HTTP_V1 extends AbstractIOTWriter {
+        private final OkHttpClient client;
 
-        OkHttpClient client = new OkHttpClient.Builder().build();
+        HTTP_V1(final CommandLine line) {
+            super(line);
 
-        AbstractIOTWriter writer = new AbstractIOTWriter(line) {
-            @Override
-            void writeRecord(final String records) throws Exception {
+            client = new OkHttpClient.Builder().build();
+        }
 
-                Request request = new Request.Builder()
-                        .url(INFLUX_DB_URL + "/write?db=" + INFLUX_DB_DATABASE)
-                        .addHeader("accept", "application/json")
-                        .post(RequestBody.create(MediaType.parse("text/plain"), records))
-                        .build();
+        @Override
+        void writeRecord(final String records) throws Exception {
+            Request request = new Request.Builder()
+                    .url(INFLUX_DB_URL + "/write?db=" + INFLUX_DB_DATABASE)
+                    .addHeader("accept", "application/json")
+                    .post(RequestBody.create(MediaType.parse("text/plain"), records))
+                    .build();
 
-                Response response = client.newCall(request).execute();
-                if (response != null) {
-                    response.close();
-                }
+            Response response = client.newCall(request).execute();
+            if (response != null) {
+                response.close();
             }
+        }
 
-            @Override
-            void finished() {
-                client.dispatcher().executorService().shutdown();
-                client.connectionPool().evictAll();
-            }
-        };
-
-        writer.start().verify();
+        @Override
+        void finished() {
+            client.dispatcher().executorService().shutdown();
+            client.connectionPool().evictAll();
+        }
     }
 }

@@ -42,7 +42,7 @@ echo
 # InfluxDB
 #
 
-docker pull ${INFLUXDB_IMAGE} || true
+docker pull --quiet ${INFLUXDB_IMAGE} || true
 docker run \
        --detach \
        --name influxdb \
@@ -52,7 +52,8 @@ docker run \
        --volume ${SCRIPT_PATH}/influxdb.conf:/etc/influxdb/influxdb.conf \
        ${INFLUXDB_IMAGE}
 
-echo "Wait to start InfluxDB"
-wget -S --spider --tries=20 --retry-connrefused --waitretry=5 http://localhost:8086/ping
+echo
+echo "Wait to start InfluxDB..."
+wget --quiet --spider --tries=20 --retry-connrefused --waitretry=5 http://localhost:8086/ping
 
 docker exec -ti influxdb sh -c "influx -execute 'create database iot_writes'"
