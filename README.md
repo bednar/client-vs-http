@@ -17,7 +17,7 @@ usage: java -cp target/client-vs-http-jar-with-dependencies.jar [-help] [-linePr
  -lineProtocolsCount <arg>   how much data writes in one batch
  -secondsCount <arg>         how long write into InfluxDB
  -threadsCount <arg>         how much Thread use to write into InfluxDB
- -type <arg>                 Type of writer (default 'CLIENT_V1'; CLIENT_V1, CLIENT_V1_OPTIMIZED, HTTP_V1)
+ -type <arg>                 Type of writer (default 'CLIENT_V1'; CLIENT_V1, CLIENT_V1_OPTIMIZED, HTTP_V1, CLIENT_V2, CLIENT_V2_OPTIMIZED, HTTP_V2)
 ```          
 
 ## Run
@@ -32,4 +32,22 @@ Start benchmark
 
 ```shell script
 ./scripts/benchmark.sh
-```
+```     
+
+## Results:
+
+### Influx DB 1.7 OSS
+
+|                                   |  rate [%]:    | rate [msg/sec]    |
+|-----------------------------------|---------------|-------------------|
+|  Client                           | -             | -                 |
+|  Client - optimized batch options | -             | -                 |
+|  Pure Java HTTP                   | -             | -                 |
+
+### Influx DB 2 OSS
+
+|                                   |  rate [%]:    | rate [msg/sec]    |
+|-----------------------------------|---------------|-------------------|
+|  Client                           | -             | -                 |
+|  Client - optimized batch options | -             | -                 |
+|  Pure Java HTTP                   | -             | -                 |

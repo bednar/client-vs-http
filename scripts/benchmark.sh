@@ -36,7 +36,7 @@ SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 cd "${SCRIPT_PATH}"/../
 mvn clean compile assembly:single
 
-declare -a types=("CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1")
+declare -a types=("CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2")
 for i in "${types[@]}"
 do
   "${SCRIPT_PATH}"/influxdb-restart.sh

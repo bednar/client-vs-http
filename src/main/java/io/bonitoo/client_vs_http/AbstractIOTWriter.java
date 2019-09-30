@@ -7,14 +7,12 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import io.bonitoo.influxdb.reactive.InfluxDBReactiveFactory;
-import io.bonitoo.influxdb.reactive.options.InfluxDBOptions;
-
 import org.apache.commons.cli.CommandLine;
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
+import org.influxdb.dto.QueryResult;
 
-import static org.fusesource.jansi.Ansi.Color.GREEN;
-import static org.fusesource.jansi.Ansi.Color.RED;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
@@ -23,7 +21,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @SuppressWarnings("CatchMayIgnoreException")
 abstract class AbstractIOTWriter {
 
-    private final String measurementName;
+    final String measurementName;
     private final int threadsCount;
     private final int secondsCount;
     private final int lineProtocolsCount;
@@ -86,26 +84,19 @@ abstract class AbstractIOTWriter {
     }
 
     void verify() {
-        InfluxDBOptions options = InfluxDBOptions.builder()
-                .url("http://localhost:8086")
-                .database("iot_writes")
-                .build();
 
-        InfluxDBReactiveFactory.connect(options)
-                .query(new Query("select count(*) from " + measurementName, "iot_writes"))
-                .subscribe(queryResult -> {
+        Double count = countInDB();
 
-                    Double count = (Double) queryResult.getResults().get(0).getSeries().get(0).getValues().get(0).get(1);
-
-                    System.out.println("Results:");
-                    System.out.println("-> expected:        " + expectedCount);
-                    System.out.println("-> total:           " + count);
-                    System.out.println("-> rate [%]:        " + (count / expectedCount) * 100);
-                    System.out.println("-> rate [msg/sec]:  " + ansi().fgGreen().a((count / secondsCount)).reset());
-                });
+        System.out.println("Results:");
+        System.out.println("-> expected:        " + expectedCount);
+        System.out.println("-> total:           " + count);
+        System.out.println("-> rate [%]:        " + (count / expectedCount) * 100);
+        System.out.println("-> rate [msg/sec]:  " + ansi().fgGreen().a((count / secondsCount)).reset());
     }
 
     abstract void writeRecord(final String records) throws Exception;
+
+    abstract Double countInDB();
 
     abstract void finished();
 
