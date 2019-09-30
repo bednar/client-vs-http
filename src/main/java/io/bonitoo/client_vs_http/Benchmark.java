@@ -21,6 +21,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.time.StopWatch;
 
+import static org.fusesource.jansi.Ansi.ansi;
+
 /**
  * Write data into InfluxDB through client.
  */
@@ -55,7 +57,7 @@ public class Benchmark {
 
         String type = line.getOptionValue("type", "CLIENT_V1");
         System.out.println();
-        System.out.println("------------- " + type + " -------------");
+        System.out.println("------------- " + ansi().fgBlue().a((type)).reset() + " -------------");
         System.out.println();
 
         AbstractIOTWriter writer;
@@ -79,7 +81,7 @@ public class Benchmark {
         stopWatch.stop();
         System.out.println();
         System.out.println("Total time: " + stopWatch.toString());
-        System.out.println("----------------------------------");
+        System.out.println("-----------------------------------------");
     }
 
     private static class Client_V1 extends AbstractIOTWriter {

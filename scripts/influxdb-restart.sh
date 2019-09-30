@@ -23,14 +23,23 @@
 
 set -e
 
+DEFAULT_DOCKER_REGISTRY="quay.io/influxdb/"
+DOCKER_REGISTRY="${DOCKER_REGISTRY:-$DEFAULT_DOCKER_REGISTRY}"
+
 DEFAULT_INFLUXDB_VERSION="1.7"
 INFLUXDB_VERSION="${INFLUXDB_VERSION:-$DEFAULT_INFLUXDB_VERSION}"
 INFLUXDB_IMAGE=influxdb:${INFLUXDB_VERSION}-alpine
+
+DEFAULT_INFLUXDB_V2_VERSION="nightly"
+INFLUXDB_V2_VERSION="${INFLUXDB_V2_VERSION:-$DEFAULT_INFLUXDB_V2_VERSION}"
+INFLUXDB_V2_IMAGE=${DOCKER_REGISTRY}influx:${INFLUXDB_V2_VERSION}
 
 SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 docker kill influxdb || true
 docker rm influxdb || true
+docker kill influxdb_v2 || true
+docker rm influxdb_v2 || true
 docker network rm influx_network || true
 docker network create -d bridge influx_network --subnet 192.168.0.0/24 --gateway 192.168.0.1
 
@@ -42,18 +51,49 @@ echo
 # InfluxDB
 #
 
-docker pull --quiet ${INFLUXDB_IMAGE} || true
+docker pull --quiet "${INFLUXDB_IMAGE}" || true
 docker run \
        --detach \
        --name influxdb \
        --network influx_network \
        --publish 8086:8086 \
        --publish 8089:8089/udp \
-       --volume ${SCRIPT_PATH}/influxdb.conf:/etc/influxdb/influxdb.conf \
-       ${INFLUXDB_IMAGE}
+       --volume "${SCRIPT_PATH}"/influxdb.conf:/etc/influxdb/influxdb.conf \
+       "${INFLUXDB_IMAGE}"
 
 echo
 echo "Wait to start InfluxDB..."
 wget --quiet --spider --tries=20 --retry-connrefused --waitretry=5 http://localhost:8086/ping
 
 docker exec -ti influxdb sh -c "influx -execute 'create database iot_writes'"
+
+#
+# InfluxDB 2.0
+#
+echo
+echo "Restarting InfluxDB 2.0 [${INFLUXDB_V2_IMAGE}] ... "
+echo
+
+docker pull "${INFLUXDB_V2_IMAGE}" || true
+docker run \
+       --detach \
+       --name influxdb_v2 \
+       --network influx_network \
+       --publish 9999:9999 \
+       "${INFLUXDB_V2_IMAGE}"
+
+echo 
+echo "Wait to start InfluxDB 2.0"
+wget --quiet --spider --tries=20 --retry-connrefused --waitretry=5 http://localhost:9999/metrics
+
+echo
+echo "Post onBoarding request, to setup initial user (my-user@my-password), org (my-org) and bucketSetup (my-bucket)"
+echo
+curl -s -X POST http://localhost:9999/api/v2/setup -H 'accept: application/json' \
+    -d '{
+            "username": "my-user",
+            "password": "my-password",
+            "org": "my-org",
+            "bucket": "my-bucket",
+            "token": "my-token"
+        }'

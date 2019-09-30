@@ -13,6 +13,10 @@ import io.bonitoo.influxdb.reactive.options.InfluxDBOptions;
 import org.apache.commons.cli.CommandLine;
 import org.influxdb.dto.Query;
 
+import static org.fusesource.jansi.Ansi.Color.GREEN;
+import static org.fusesource.jansi.Ansi.Color.RED;
+import static org.fusesource.jansi.Ansi.ansi;
+
 /**
  * @author Jakub Bednar (26/09/2019 12:21)
  */
@@ -97,7 +101,7 @@ abstract class AbstractIOTWriter {
                     System.out.println("-> expected:        " + expectedCount);
                     System.out.println("-> total:           " + count);
                     System.out.println("-> rate [%]:        " + (count / expectedCount) * 100);
-                    System.out.println("-> rate [msg/sec]:  " + (count / secondsCount));
+                    System.out.println("-> rate [msg/sec]:  " + ansi().fgGreen().a((count / secondsCount)).reset());
                 });
     }
 
