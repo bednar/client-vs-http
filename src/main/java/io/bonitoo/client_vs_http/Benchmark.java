@@ -79,6 +79,7 @@ public class Benchmark {
         stopWatch.stop();
         System.out.println();
         System.out.println("Total time: " + stopWatch.toString());
+        System.out.println("----------------------------------");
     }
 
     private static class Client_V1 extends AbstractIOTWriter {

@@ -94,9 +94,10 @@ abstract class AbstractIOTWriter {
                     Double count = (Double) queryResult.getResults().get(0).getSeries().get(0).getValues().get(0).get(1);
 
                     System.out.println("Results:");
-                    System.out.println("-> expected:    " + expectedCount);
-                    System.out.println("-> total:       " + count);
-                    System.out.println("-> rate:        " + (count / expectedCount) * 100);
+                    System.out.println("-> expected:        " + expectedCount);
+                    System.out.println("-> total:           " + count);
+                    System.out.println("-> rate [%]:        " + (count / expectedCount) * 100);
+                    System.out.println("-> rate [msg/sec]:  " + (count / secondsCount));
                 });
     }
 
