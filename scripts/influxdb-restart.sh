@@ -86,6 +86,9 @@ echo
 echo "Wait to start InfluxDB 2.0"
 wget --quiet --spider --tries=20 --retry-connrefused --waitretry=5 http://localhost:9999/metrics
 
+docker exec -ti influxdb bash -c "apk add procps"
+docker exec -ti influxdb_v2 bash -c "apt update -y && apt install -y procps"
+
 echo
 echo "Post onBoarding request, to setup initial user (my-user@my-password), org (my-org) and bucketSetup (my-bucket)"
 echo
