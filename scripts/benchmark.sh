@@ -27,22 +27,31 @@ threadsCount=2000
 secondsCount=30
 lineProtocolsCount=100
 
-#threadsCount=20
+#threadsCount=2
 #secondsCount=5
-#lineProtocolsCount=10
+#lineProtocolsCount=2
 
-SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+SCRIPT_PATH="$(
+  cd "$(dirname "$0")"
+  pwd -P
+)"
 
 cd "${SCRIPT_PATH}"/../
 mvn clean compile assembly:single
+cd "${SCRIPT_PATH}"/../go
+go build -o ./bin/benchmark ./cmd/main.go
 
-declare -a types=("CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2")
-for i in "${types[@]}"
-do
+declare -a types=("CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2" "CLIENT_GO")
+for i in "${types[@]}"; do
   "${SCRIPT_PATH}"/influxdb-restart.sh
-   java -jar "${SCRIPT_PATH}"/../target/client-vs-http-jar-with-dependencies.jar -type "$i" \
+  if [ "$i" != "CLIENT_GO" ]; then
+    java -jar "${SCRIPT_PATH}"/../target/client-vs-http-jar-with-dependencies.jar -type "$i" \
       -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount}
-   echo
-   echo
-   echo
+  else
+    "${SCRIPT_PATH}"/../go/bin/benchmark \
+      -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount}
+  fi
+  echo
+  echo
+  echo
 done
