@@ -46,7 +46,7 @@ func main() {
 	fmt.Println()
 	fmt.Println("Querying InfluxDB 2.0...")
 	fmt.Println()
-	
+
 	fmt.Println("Results:")
 	fmt.Println("-> expected:        ", (*threadsCount)*(*secondsCount)*(*lineProtocolsCount))
 	fmt.Println("-> total:           ", "???")
