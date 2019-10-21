@@ -23,13 +23,13 @@
 
 set -e
 
-#threadsCount=2000
-#secondsCount=30
-#lineProtocolsCount=100
+threadsCount=2000
+secondsCount=30
+lineProtocolsCount=100
 
-threadsCount=2
-secondsCount=5
-lineProtocolsCount=2
+#threadsCount=2
+#secondsCount=5
+#lineProtocolsCount=2
 
 SCRIPT_PATH="$(
   cd "$(dirname "$0")"
