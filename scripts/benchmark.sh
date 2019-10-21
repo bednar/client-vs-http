@@ -38,7 +38,8 @@ SCRIPT_PATH="$(
 
 cd "${SCRIPT_PATH}"/../
 mvn clean compile assembly:single
-go build -o ./go/bin/benchmark ./go/cmd/main.go
+cd "${SCRIPT_PATH}"/../go
+go build -o ./bin/benchmark ./cmd/main.go
 
 declare -a types=("CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2" "CLIENT_GO")
 for i in "${types[@]}"; do
