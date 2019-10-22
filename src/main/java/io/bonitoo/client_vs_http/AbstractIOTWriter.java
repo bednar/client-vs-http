@@ -27,11 +27,11 @@ abstract class AbstractIOTWriter {
     private final int lineProtocolsCount;
     private final int expectedCount;
     private volatile boolean execute = true;
-    private boolean skipCount = false;
+    private boolean skipCount;
 
     AbstractIOTWriter(CommandLine line) {
 
-        measurementName = line.getOptionValue("measurementName",  "sensor_" + System.currentTimeMillis());
+        measurementName = line.getOptionValue("measurementName", "sensor_" + System.currentTimeMillis());
         threadsCount = Integer.parseInt(line.getOptionValue("threadsCount", "2000"));
         secondsCount = Integer.parseInt(line.getOptionValue("secondsCount", "30"));
         lineProtocolsCount = Integer.parseInt(line.getOptionValue("lineProtocolsCount", "100"));
@@ -87,11 +87,11 @@ abstract class AbstractIOTWriter {
 
     void verify() {
 
-	    Double count= Double.NaN;
-    	if (!skipCount)
-	    {
-		    count = countInDB();
-	    }
+        if (skipCount) {
+            return;
+        }
+
+        Double count = countInDB();
 
         System.out.println("Results:");
         System.out.println("-> expected:        " + expectedCount);

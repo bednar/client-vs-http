@@ -25,7 +25,7 @@ function run_benchmark() {
   case "$1" in
   *GO*)
     "${SCRIPT_PATH}"/../go/bin/benchmark \
-      -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount}
+      -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount} -skipCount
     ;;
   *)
     java -jar "${SCRIPT_PATH}"/../target/client-vs-http-jar-with-dependencies.jar -type "$1" \
