@@ -62,6 +62,8 @@ public class Benchmark {
         cmdOptions.addOption(Option.builder("threadsCount").desc("how much Thread use to write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("secondsCount").desc("how long write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("lineProtocolsCount").desc("how much data writes in one batch").hasArg().build());
+        cmdOptions.addOption(Option.builder("measurementName").desc("target measurement name").hasArg().build());
+        cmdOptions.addOption(Option.builder("skipCount").desc("skip query count records on end of the benchmark").hasArg(false).build());
 
         CommandLineParser parser = new DefaultParser();
         // parse the command line arguments
