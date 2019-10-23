@@ -11,7 +11,7 @@ c=`curl http://localhost:9999/api/v2/query?org=my-org -XPOST -sS \
   |> range(start: 0, stop: now())
   |> filter(fn: (r) => r._measurement == "'${measurementName}'")
   |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-  |> drop(columns: ["id"]) |> count(column: "temperature")' | grep $measurementName | awk -F, '{print $7}' |sed 's/[^0-9]*//g' `
+  |> drop(columns: ["id", "host"]) |> count(column: "temperature")' | grep $measurementName | awk -F, '{print $7}' |sed 's/[^0-9]*//g' `
 
 
 echo "---"
@@ -32,7 +32,7 @@ curl http://localhost:9999/api/v2/query?org=my-org -XPOST -sS \
   |> range(start: 0, stop: now())
   |> filter(fn: (r) => r._measurement == "'${measurementName}'")
   |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-  |> drop(columns: ["id"]) |> count(column: "temperature")' | grep $measurementName | awk -F, '{print $7}' > tmp.txt
+  |> drop(columns: ["id", "host"]) |> count(column: "temperature")' | grep $measurementName | awk -F, '{print $7}' > tmp.txt
 
 
 

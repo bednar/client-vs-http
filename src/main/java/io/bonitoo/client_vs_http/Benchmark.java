@@ -42,9 +42,9 @@ import static org.fusesource.jansi.Ansi.ansi;
 @SuppressWarnings({"UnstableApiUsage"})
 public class Benchmark {
 
-    private static final String INFLUX_DB_URL = "http://localhost:8086";
+    private static String INFLUX_DB_URL;
+    private static String INFLUX_DB_2_URL;
     private static final String INFLUX_DB_DATABASE = "iot_writes";
-    private static final String INFLUX_DB_2_URL = "http://localhost:9999";
     private static final String INFLUX_DB_2_ORG = "my-org";
     private static final String INFLUX_DB_2_BUCKET = "my-bucket";
     private static final String INFLUX_DB_2_TOKEN = "my-token";
@@ -64,6 +64,8 @@ public class Benchmark {
         cmdOptions.addOption(Option.builder("lineProtocolsCount").desc("how much data writes in one batch").hasArg().build());
         cmdOptions.addOption(Option.builder("measurementName").desc("target measurement name").hasArg().build());
         cmdOptions.addOption(Option.builder("skipCount").desc("skip query count records on end of the benchmark").hasArg(false).build());
+        cmdOptions.addOption(Option.builder("influxDb1").desc("URL of InfluxDB v1; default: 'http://localhost:8086'").hasArg().build());
+        cmdOptions.addOption(Option.builder("influxDb2").desc("URL of InfluxDB v2; default: 'http://localhost:9999'").hasArg().build());
 
         CommandLineParser parser = new DefaultParser();
         // parse the command line arguments
@@ -79,6 +81,18 @@ public class Benchmark {
         System.out.println();
         System.out.println("------------- " + ansi().fgBlue().a((type)).reset() + " -------------");
         System.out.println();
+
+        INFLUX_DB_URL = line.getOptionValue("influxDb1", "http://localhost:8086");
+        INFLUX_DB_2_URL = line.getOptionValue("influxDb2", "http://localhost:9999");
+
+        if (line.hasOption("influxDb1")) {
+            System.out.println(ansi().fgRed().a(("destination: ")).reset() + INFLUX_DB_URL);
+            System.out.println();
+        }
+        if (line.hasOption("influxDb2")) {
+            System.out.println(ansi().fgRed().a(("destination: ")).reset() + INFLUX_DB_2_URL);
+            System.out.println();
+        }
 
         AbstractIOTWriter writer;
         if ("CLIENT_V1".equals(type)) {
@@ -262,12 +276,12 @@ public class Benchmark {
         Double countInDB() {
 
             System.out.println("Querying InfluxDB 2.0...");
-            
+
             String query = "from(bucket:\"my-bucket\")\n"
                     + "  |> range(start: 0, stop: now())\n"
                     + "  |> filter(fn: (r) => r._measurement == \"" + measurementName + "\")\n"
                     + "  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n"
-                    + "  |> drop(columns: [\"id\"])\n"
+                    + "  |> drop(columns: [\"id\", \"host\"])\n"
                     + "  |> count(column: \"temperature\")";
 
             InfluxDBClientOptions options = InfluxDBClientOptions.builder()

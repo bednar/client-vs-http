@@ -165,7 +165,7 @@ func (p *WriterV2) Count(measurementName string) (int, error) {
 		"|> range(start: 0, stop: now()) " +
 		"|> filter(fn: (r) => r._measurement == \"" + measurementName + "\") " +
 		"|> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") " +
-		"|> drop(columns: [\"id\"]) " +
+		"|> drop(columns: [\"id\", \"host\"]) " +
 		"|> count(column: \"temperature\")"
 
 	queryResult, err := p.influx.QueryCSV(context.Background(), query, "my-org")
