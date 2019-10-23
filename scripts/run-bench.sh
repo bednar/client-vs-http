@@ -24,7 +24,7 @@ function run_benchmark() {
 
   case "$1" in
   *GO*)
-    "${SCRIPT_PATH}"/../go/bin/benchmark \
+    "${SCRIPT_PATH}"/../go/bin/benchmark -type "$1" \
       -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount} -skipCount
     ;;
   *)
@@ -82,7 +82,7 @@ function count_rows() {
   esac
 }
 
-declare -a types=("CLIENT_GO_V2" "CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2")
+declare -a types=("CLIENT_GO_V1" "CLIENT_GO_V2" "CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2")
 
 for i in "${types[@]}"; do
   echo "Restarting docker images..."
