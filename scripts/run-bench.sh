@@ -2,8 +2,8 @@
 
 set -e
 
-threadsCount=10
-secondsCount=10
+threadsCount=500
+secondsCount=60
 lineProtocolsCount=100
 measurementName=sensor_$RANDOM$RANDOM
 expectedCount=$(($threadsCount * $secondsCount * $lineProtocolsCount))
@@ -36,16 +36,17 @@ function run_benchmark() {
 
 function warmup() {
   echo "Warming DB "$i
+  warmSec=15
   case "$i" in
   *V1*)
-    echo "Warming V1"
-    run_benchmark CLIENT_V1
+    client="CLIENT_V1"
     ;;
   *V2*)
-    echo "Warming V2"
-    run_benchmark CLIENT_V2
+    client="CLIENT_V2"
     ;;
   esac
+  java -jar "${SCRIPT_PATH}"/../target/client-vs-http-jar-with-dependencies.jar -type "${client}" \
+  -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${warmSec} -lineProtocolsCount ${lineProtocolsCount} -skipCount
 }
 
 function influxdb_stats() {
@@ -101,9 +102,8 @@ for i in "${types[@]}"; do
   cpu_stop="$(influxdb_stats $i)"
   cpu_final=$(($cpu_stop - $cpu_start))
   echo "cputime "$i":" $cpu_final
-  echo "Query records count..."
   count=$(count_rows)
-  echo "Written records: "$count
+  echo "Written records "$i": "$count
   echo "Rate %: " $(bc <<<"scale=2; 100 * $count / $expectedCount")
   echo "Rate msg/sec: " $(bc <<<"scale=2; $count / $secondsCount")
 
