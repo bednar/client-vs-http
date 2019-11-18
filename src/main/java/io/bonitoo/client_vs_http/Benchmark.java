@@ -202,6 +202,7 @@ public class Benchmark {
 
             client = InfluxDBClientFactory.create(INFLUX_DB_2_URL, INFLUX_DB_2_TOKEN.toCharArray());
             writeApi = client.getWriteApi(writeOptions);
+	        System.out.println("BatchSize:  " + writeOptions.getBatchSize());
             LogManager.getLogManager().reset();
         }
 

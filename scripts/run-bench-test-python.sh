@@ -2,8 +2,8 @@
 
 set -e
 
-threadsCount=2000
-secondsCount=60
+threadsCount=500
+secondsCount=10
 lineProtocolsCount=100
 measurementName=sensor_$RANDOM$RANDOM
 expectedCount=$(($threadsCount * $secondsCount * $lineProtocolsCount))
@@ -15,10 +15,10 @@ SCRIPT_PATH="$(
 
 cd "${SCRIPT_PATH}"/../
 echo "Compile java benchmarks..."
-mvn -quiet clean compile assembly:single
+#mvn -quiet clean compile assembly:single
 echo "Compile go benchmarks"
 cd "${SCRIPT_PATH}"/../go
-go build -o ./bin/benchmark ./cmd/main.go
+#go build -o ./bin/benchmark ./cmd/main.go
 
 function run_benchmark() {
 
@@ -95,16 +95,17 @@ function count_rows() {
   esac
 }
 
-declare -a types=("TELEGRAF_V1" "TELEGRAF_V2" "CLIENT_GO_V1" "CLIENT_GO_V2" "CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2" "CLIENT_PYTHON_V1" "CLIENT_PYTHON_V2")
+#declare -a types=("CLIENT_V1_OPTIMIZED" "CLIENT_V2_OPTIMIZED" "TELEGRAF_V1" "TELEGRAF_V2" "CLIENT_GO_V1" "CLIENT_GO_V2"  "HTTP_V1" "HTTP_V2")
+declare -a types=("CLIENT_PYTHON_V1" "CLIENT_PYTHON_V2")
 
 for i in "${types[@]}"; do
   echo "Restarting docker images..."
-  "${SCRIPT_PATH}"/influxdb-restart.sh &>/dev/null
+ # "${SCRIPT_PATH}"/influxdb-restart.sh &>/dev/null
 
 
   echo "Warmup iteration..."
   measurementName=sensor_$RANDOM$RANDOM
-  warmup $i &>/dev/null
+#  warmup $i &>/dev/null
 
   echo "Start benchmark "$i
   cpu_start="$(influxdb_stats $i)"
