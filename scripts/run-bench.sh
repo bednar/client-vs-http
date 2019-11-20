@@ -19,6 +19,10 @@ mvn -quiet clean compile assembly:single
 echo "Compile go benchmarks"
 cd "${SCRIPT_PATH}"/../go
 go build -o ./bin/benchmark ./cmd/main.go
+cd "${SCRIPT_PATH}"/../csharp
+echo "Compile c# benchmarks"
+dotnet restore
+dotnet publish
 
 function run_benchmark() {
 
@@ -37,7 +41,11 @@ function run_benchmark() {
      java -jar "${SCRIPT_PATH}"/../target/client-vs-http-jar-with-dependencies.jar -type HTTP_V1 \
       -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount} -skipCount \
       -influxDb1 "http://localhost:8186"
-     kill -9 $TELEGRAF_PID &>/dev/null || true 
+     kill -9 $TELEGRAF_PID &>/dev/null || true
+    ;;
+  *CSHARP*)
+    dotnet "${SCRIPT_PATH}"/../csharp/Benchmark/bin/Debug/netcoreapp3.0/publish/Benchmark.dll -type "$1" \
+      -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount} -skipCount
     ;;
   *)
     java -jar "${SCRIPT_PATH}"/../target/client-vs-http-jar-with-dependencies.jar -type "$1" \
@@ -95,7 +103,7 @@ function count_rows() {
   esac
 }
 
-declare -a types=("TELEGRAF_V1" "TELEGRAF_V2" "CLIENT_GO_V1" "CLIENT_GO_V2" "CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2" "CLIENT_PYTHON_V1" "CLIENT_PYTHON_V2")
+declare -a types=("TELEGRAF_V1" "TELEGRAF_V2" "CLIENT_GO_V1" "CLIENT_GO_V2" "CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2" "CLIENT_PYTHON_V1" "CLIENT_PYTHON_V2" "CLIENT_CSHARP_V2")
 
 for i in "${types[@]}"; do
   echo "Restarting docker images..."

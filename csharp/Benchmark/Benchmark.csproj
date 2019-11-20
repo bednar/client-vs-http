@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
+
+        <AssemblyName>Benchmark</AssemblyName>
+        <Version>1.0.0-preview</Version>
+
+        <PackageId>Benchmark</PackageId>
+        <RepositoryUrl>https://github.com/bednar/client-vs-http</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        
+        <RootNamespace>Benchmark</RootNamespace>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="InfluxDB.Client" Version="1.2.0" />
+      <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
+    </ItemGroup>
+
+</Project>
