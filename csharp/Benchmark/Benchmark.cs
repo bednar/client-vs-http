@@ -5,7 +5,12 @@ using System.Threading.Tasks;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Core.Flux.Domain;
+using InfluxDB.Collector;
+using InfluxDB.LineProtocol;
+using InfluxDB.LineProtocol.Client;
+using InfluxDB.LineProtocol.Payload;
 using Microsoft.Extensions.CommandLineUtils;
+using Microsoft.VisualBasic;
 
 /**
  * @author Pavlina Rolincova (18/11/2019 10:21)
@@ -130,24 +135,39 @@ namespace Benchmark
             return option.HasValue() ? option.Value() : defaultValue;
         }
 
-        class ClientV1 : AbstractV1IotWriter
+        class ClientV1 : AbstractIotWriterEx
         {
-            public ClientV1(List<CommandOption> options) : base(options)
+            private MetricsCollector _collector;
+            
+            public ClientV1(List<CommandOption> options) : base(options, InfluxDbDatabase, InfluxDbUrl, null)
             {
+                _collector = new CollectorConfiguration()
+                                .Batch.AtInterval(TimeSpan.FromSeconds(2))
+                                .WriteTo.InfluxDB(InfluxDbUrl, InfluxDbDatabase)
+                                .CreateCollector();
             }
 
-            public override void WriteRecord(string records)
+            protected override void WriteRecord(string records)
             {
+                var fields = records.Split(",")[1];
+                var values = fields.Split();
                 
+                _collector.Write(MeasurementName, new Dictionary<string, object>
+                {
+                                {values[1].Split("=")[0], values[1].Split("=")[1]}
+
+                }, new Dictionary<string, string> {
+                                {values[0].Split("=")[0], values[0].Split("=")[1]}
+                });
             }
 
             protected override void Finished()
             {
-                
+                _collector.Dispose();
             }
         }
 
-        private class ClientV2 : AbstractV2IotWriter
+        private class ClientV2 : AbstractIotWriterEx
         {
             private readonly InfluxDBClient _client;
             private readonly WriteApi _writeApi;
@@ -157,13 +177,13 @@ namespace Benchmark
 
             }
 
-            public ClientV2(List<CommandOption> options, WriteOptions writeOptions) : base(options)
+            public ClientV2(List<CommandOption> options, WriteOptions writeOptions) : base(options, InfluxDb2Bucket, InfluxDb2Url, InfluxDb2Token)
             {
                 _client = InfluxDBClientFactory.Create(InfluxDb2Url, InfluxDb2Token.ToCharArray());
                 _writeApi = _client.GetWriteApi(writeOptions);
             }
 
-            public override void WriteRecord(string records)
+            protected override void WriteRecord(string records)
             {
                 _writeApi.WriteRecord(InfluxDb2Bucket, InfluxDb2Org, InfluxDb2Precision, records);
             }
@@ -181,38 +201,24 @@ namespace Benchmark
             }
         }
 
-        abstract class AbstractV1IotWriter : AbstractIotWriter
+        abstract class AbstractIotWriterEx : AbstractIotWriter
         {
-            protected AbstractV1IotWriter(List<CommandOption> options) : base(options)
+            protected string url;
+            protected string databaseName;
+            protected string token;                          
+            
+            protected AbstractIotWriterEx(List<CommandOption> options, string databaseName, string url, string token) : base(options)
             {
-
+                this.databaseName = databaseName;
+                this.url = url;
+                this.token = token;
             }
 
             protected override async Task<double> CountInDb()
             {
-                /*InfluxDB client = InfluxDBFactory.connect(INFLUX_DB_URL);
-                QueryResult result = client
-                                .setDatabase("iot_writes")
-                                .query(new Query("select count(*) from " + measurementName, "iot_writes"));
-                client.close();
+                Console.WriteLine("Querying InfluxDB ...");
 
-                return ((Double) result.getResults().get(0).getSeries().get(0).getValues().get(0).get(1));*/
-                return 1;
-            }
-        }
-
-        abstract class AbstractV2IotWriter : AbstractIotWriter
-        {
-            protected AbstractV2IotWriter(List<CommandOption> options) : base(options)
-            {
-
-            }
-
-            protected override async Task<double> CountInDb()
-            {
-                Console.WriteLine("Querying InfluxDB 2.0...");
-
-                var query = "from(bucket:\"my-bucket\")\n"
+                var query = "from(bucket:\"" + databaseName + "\")\n"
                                + "  |> range(start: 0, stop: now())\n"
                                + "  |> filter(fn: (r) => r._measurement == \"" + MeasurementName + "\")\n"
                                + "  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n"
@@ -220,7 +226,7 @@ namespace Benchmark
                                + "  |> count(column: \"temperature\")";
 
                 var options = InfluxDBClientOptions.Builder.CreateNew()
-                                .Url(InfluxDb2Url)
+                                .Url(url)
                                 .AuthenticateToken(InfluxDb2Token.ToCharArray())
                                 .Build();
 

@@ -93,7 +93,7 @@ namespace Benchmark
 
         protected abstract Task<double> CountInDb();
 
-        public abstract void WriteRecord(string records);
+        protected abstract void WriteRecord(string records);
 
         protected abstract void Finished();
 
