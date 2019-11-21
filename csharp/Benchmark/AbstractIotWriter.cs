@@ -37,12 +37,6 @@ namespace Benchmark
             Console.WriteLine("lineProtocolsCount: " + LineProtocolsCount);
             Console.WriteLine();
         }
-        
-        private void CancelNotification()
-        {
-            Execute = false;
-            Console.WriteLine("\n\nThe time: " + SecondsCount + " seconds elapsed! Stopping all writers");
-        }
 
         public async Task<AbstractIotWriter> Start()
         {
@@ -51,7 +45,6 @@ namespace Benchmark
 
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.CancelAfter(SecondsCount);
-            cancellationTokenSource.Token.Register(CancelNotification);
 
             var block = new ActionBlock<int>(async _ => { await DoLoad(_); },
                             new ExecutionDataflowBlockOptions{CancellationToken = cancellationTokenSource.Token});
