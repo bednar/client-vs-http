@@ -5,14 +5,14 @@ from typing import Union
 
 import influxdb
 from influxdb_client import InfluxDBClient
-from influxdb_client.client.write_api import WriteOptions, WriteType
+from influxdb_client.client.write_api import WriteOptions
 
 
 class Writer:
     def __init__(self, influxdb_client: Union[InfluxDBClient, influxdb.InfluxDBClient]):
         self.client = influxdb_client
         if isinstance(influxdb_client, InfluxDBClient):
-            self.write_api = self.client.write_api(WriteOptions(write_type=WriteType.batching, batch_size=50000))
+            self.write_api = self.client.write_api(WriteOptions(batch_size=50_000, flush_interval=10_000))
 
     def write(self, id: int, measurement_name: str, iteration: int):
         pass
@@ -52,6 +52,9 @@ def worker(stop_event, id: int, measurement_name, seconds_count, line_protocol_c
             if stop_event.is_set():
                 return
             writer.write(id, measurement_name, j)
+
+        if stop_event.is_set():
+            return
 
         time.sleep(1)
 
