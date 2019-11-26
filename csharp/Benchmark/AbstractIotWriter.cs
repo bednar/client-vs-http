@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,9 +54,10 @@ namespace Benchmark
             {
 //                Console.WriteLine("Prepare thread: {0}", i);
                 var stopwatch = Stopwatch.StartNew();
-                Thread t = new Thread(() => DoLoad(i, stopwatch));
+                Thread t = new Thread(new ParameterizedThreadStart(DoLoad));
+//                Thread t = new Thread(() => DoLoad(i, stopwatch));
                 threads.Add(t);
-                t.Start();
+                t.Start(i);
             }
 
             for (int i = 0; i < threads.Count; i++)
@@ -114,10 +116,14 @@ namespace Benchmark
             return (long) (DateTime.UtcNow - jan1St1970).TotalMilliseconds;
         }
 
-        private void DoLoad(int id, Stopwatch stopwatch)
+        private void DoLoad(object param)
+
         {
+            int id = Convert.ToInt32(param);
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             var random = new Random();
-//            Console.WriteLine("Executing load on Thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
+            Console.WriteLine("Executing load on Thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
             for (var ii = 0; ii < SecondsCount && Execute; ii++)
             {
                 if (stopwatch.ElapsedMilliseconds >= SecondsCount * 1000)
