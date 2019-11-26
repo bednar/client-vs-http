@@ -123,7 +123,7 @@ namespace Benchmark
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             var random = new Random();
-            Console.WriteLine("Executing load on Thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
+//            Console.WriteLine("Executing load on Thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
             for (var ii = 0; ii < SecondsCount && Execute; ii++)
             {
                 if (stopwatch.ElapsedMilliseconds >= SecondsCount * 1000)
