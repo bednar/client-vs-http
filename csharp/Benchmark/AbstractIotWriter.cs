@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
@@ -20,12 +21,13 @@ namespace Benchmark
         protected readonly int ExpectedCount;
         protected static bool Execute = true;
         protected readonly bool SkipCount;
+        public static int Counter = 0;
 
         public AbstractIotWriter(List<CommandOption> options)
         {
             MeasurementName = Benchmark.GetOptionValue(GetOption(options, "measurementName"),
-                            "sensor_" + CurrentTimeMillis());
-            ThreadsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "threadsCount"), "2000"));
+                "sensor_" + CurrentTimeMillis());
+            ThreadsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "threadsCount"), "500"));
             SecondsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "secondsCount"), "30"));
             LineProtocolsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "lineProtocolsCount"), "100"));
             SkipCount = GetOption(options, "skipCount").HasValue();
@@ -46,23 +48,26 @@ namespace Benchmark
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.CancelAfter(SecondsCount);
 
-            var block = new ActionBlock<int>(async _ => { await DoLoad(_); },
-                            new ExecutionDataflowBlockOptions{CancellationToken = cancellationTokenSource.Token});
-            
-            try
+            var threads = new Collection<Thread>();
+            for (int i = 0; i < ThreadsCount; i++)
             {
-                for (var ii = 1; ii < ThreadsCount + 1; ii++)
-                {
-                    block.Post(ii);
-                }
+//                Console.WriteLine("Prepare thread: {0}", i);
+                var stopwatch = Stopwatch.StartNew();
+                Thread t = new Thread(() => DoLoad(i, stopwatch));
+                threads.Add(t);
+                t.Start();
+            }
 
-                block.Complete();
-                await block.Completion;
-            }
-            catch (Exception n)
+            for (int i = 0; i < threads.Count; i++)
             {
-                Console.WriteLine(n.Message);
+                var thread = threads[i];
+                thread.Join(10000);
             }
+
+            Console.WriteLine("Writer counter: {0}", Counter);
+            var sleep = 10000;
+            Console.WriteLine("Sleeping for: {0} ms", sleep);
+            Thread.Sleep(sleep);
 
             Console.WriteLine();
             Console.WriteLine();
@@ -109,10 +114,18 @@ namespace Benchmark
             return (long) (DateTime.UtcNow - jan1St1970).TotalMilliseconds;
         }
 
-        private async Task DoLoad(int id)
+        private void DoLoad(int id, Stopwatch stopwatch)
         {
+            var random = new Random();
+//            Console.WriteLine("Executing load on Thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
             for (var ii = 0; ii < SecondsCount && Execute; ii++)
             {
+                if (stopwatch.ElapsedMilliseconds >= SecondsCount * 1000)
+                {
+                    Console.WriteLine("Time elapsed for thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
+                    break;
+                }
+
                 if (!Execute)
                 {
                     break;
@@ -123,7 +136,7 @@ namespace Benchmark
                 //
                 if (id == 1)
                 {
-                    Console.WriteLine("\rwriting iterations: " + (ii + 1) + "/" + SecondsCount);
+                    Console.Write("\rwriting iterations: " + (ii + 1) + "/" + SecondsCount);
                 }
 
                 //
@@ -132,10 +145,13 @@ namespace Benchmark
                 var start = ii * LineProtocolsCount;
                 var end = start + LineProtocolsCount;
 
-                var records = Enumerable.Range(start, end).ToList().Select(r =>
-                                                MeasurementName + "," + "id=" + id + " temperature=" +
-                                                CurrentTimeMillis() + " " + r)
-                                .ToList();
+                var records = new List<string>();
+                for (int j = start; j < end; j++)
+                {
+                    var record = MeasurementName + "," + "id=" + id + " temperature="
+                                 + random.Next(0, Int32.MaxValue) +" " + j;
+                    records.Add(record);
+                }
 
                 //
                 // Write records one by one
@@ -155,6 +171,8 @@ namespace Benchmark
 
                 Thread.Sleep(1000);
             }
+
+//            Console.WriteLine("Finished thread id={0}", id);
         }
     }
 }

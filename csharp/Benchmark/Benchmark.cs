@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;
+using InfluxDB.Client.Core;
 using InfluxDB.Client.Core.Flux.Domain;
 using InfluxDB.Collector;
 using InfluxDB.LineProtocol;
@@ -54,9 +56,10 @@ namespace Benchmark
             var argInfluxDb2 = cmd.Option("-influxDb2 <value>", "URL of InfluxDB v2; default: 'http://localhost:9999'",
                             CommandOptionType.SingleValue);
 
+            AbstractIotWriter writer = null;
             cmd.OnExecute(async () =>
             {
-                var type = GetOptionValue(argType, "CLIENT_CSHARP_V1");
+                var type = GetOptionValue(argType, "CLIENT_CSHARP_V2");
 
                 Console.ForegroundColor = ConsoleColor.Blue;
 
@@ -78,11 +81,9 @@ namespace Benchmark
                 {
                     WriteDestination(InfluxDb2Url);
                 }
-
+                
                 try
                 {
-                    AbstractIotWriter writer;
-
                     if (type.Equals("CLIENT_CSHARP_V1"))
                     {
                         writer = new ClientV1(cmd.Options);
@@ -92,6 +93,12 @@ namespace Benchmark
 
                         writer = new ClientV2(cmd.Options);
                     }
+                    else if (type.Equals("CLIENT_CSHARP_EMPTY"))
+                    {
+
+                        writer = new NullWritter(cmd.Options);
+                    }
+
                     else
                     {
                         throw new CommandParsingException(cmd, "The: " + type + " is not supported");
@@ -111,6 +118,7 @@ namespace Benchmark
             cmd.Execute(args);
 
             stopWatch.Stop();
+            
 
             Console.WriteLine();
             Console.WriteLine("Total time: " + stopWatch.Elapsed);
@@ -135,6 +143,31 @@ namespace Benchmark
             return option.HasValue() ? option.Value() : defaultValue;
         }
 
+        class NullWritter : AbstractIotWriterEx
+        {
+            public NullWritter(List<CommandOption> options) : base(options, InfluxDbDatabase, InfluxDbUrl, null)
+            {
+            }
+
+            public NullWritter(List<CommandOption> options, string databaseName, string url, string token) : base(options, databaseName, url, token)
+            {
+            }
+
+            protected override Task<double> CountInDb()
+            {
+                return Task.FromResult(Convert.ToDouble(Counter));
+            }
+
+            protected override void WriteRecord(string records)
+            {
+                Interlocked.Increment(ref Counter);
+            }
+
+            protected override void Finished()
+            {
+                return;
+            }
+        }
         class ClientV1 : AbstractIotWriterEx
         {
             private MetricsCollector _collector;
@@ -159,6 +192,7 @@ namespace Benchmark
                 }, new Dictionary<string, string> {
                                 {values[0].Split("=")[0], values[0].Split("=")[1]}
                 });
+                Interlocked.Increment(ref Counter);
             }
 
             protected override void Finished()
@@ -172,26 +206,32 @@ namespace Benchmark
             private readonly InfluxDBClient _client;
             private readonly WriteApi _writeApi;
 
-            public ClientV2(List<CommandOption> options) : this(options, WriteOptions.CreateNew().Build())
+            public ClientV2(List<CommandOption> options) : this(options, WriteOptions.CreateNew().BatchSize(100000).FlushInterval(2000).Build())
             {
 
             }
 
             public ClientV2(List<CommandOption> options, WriteOptions writeOptions) : base(options, InfluxDb2Bucket, InfluxDb2Url, InfluxDb2Token)
             {
-                _client = InfluxDBClientFactory.Create(InfluxDb2Url, InfluxDb2Token.ToCharArray());
+                InfluxDBClientOptions opts = InfluxDBClientOptions.Builder.CreateNew()
+                    .Url(InfluxDb2Url)
+                    .AuthenticateToken(InfluxDb2Token.ToCharArray())
+                    .LogLevel(LogLevel.Headers).Build();
+                _client = InfluxDBClientFactory.Create(opts);
                 _writeApi = _client.GetWriteApi(writeOptions);
             }
 
             protected override void WriteRecord(string records)
             {
                 _writeApi.WriteRecord(InfluxDb2Bucket, InfluxDb2Org, InfluxDb2Precision, records);
+                Interlocked.Increment(ref Counter);
             }
 
             protected override void Finished()
             {
                 try
                 {
+                    _writeApi.Flush();
                     _client.Dispose();
                 }
                 catch (Exception e)
@@ -205,7 +245,8 @@ namespace Benchmark
         {
             protected string url;
             protected string databaseName;
-            protected string token;                          
+            protected string token; 
+            
             
             protected AbstractIotWriterEx(List<CommandOption> options, string databaseName, string url, string token) : base(options)
             {
