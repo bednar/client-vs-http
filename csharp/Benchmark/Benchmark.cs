@@ -6,13 +6,8 @@ using System.Threading.Tasks;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Core;
-using InfluxDB.Client.Core.Flux.Domain;
 using InfluxDB.Collector;
-using InfluxDB.LineProtocol;
-using InfluxDB.LineProtocol.Client;
-using InfluxDB.LineProtocol.Payload;
 using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.VisualBasic;
 
 /**
  * @author Pavlina Rolincova (18/11/2019 10:21)

@@ -2,13 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using InfluxDB.Client.Api.Domain;
 using Microsoft.Extensions.CommandLineUtils;
 
 namespace Benchmark
@@ -52,10 +47,7 @@ namespace Benchmark
             var threads = new Collection<Thread>();
             for (int i = 0; i < ThreadsCount; i++)
             {
-//                Console.WriteLine("Prepare thread: {0}", i);
-                var stopwatch = Stopwatch.StartNew();
                 Thread t = new Thread(new ParameterizedThreadStart(DoLoad));
-//                Thread t = new Thread(() => DoLoad(i, stopwatch));
                 threads.Add(t);
                 t.Start(i);
             }
@@ -63,7 +55,7 @@ namespace Benchmark
             for (int i = 0; i < threads.Count; i++)
             {
                 var thread = threads[i];
-                thread.Join(10000);
+                thread.Join(SecondsCount * 1000);
             }
 
             Console.WriteLine("Writer counter: {0}", Counter);
@@ -155,7 +147,7 @@ namespace Benchmark
                 for (int j = start; j < end; j++)
                 {
                     var record = MeasurementName + "," + "id=" + id + " temperature="
-                                 + random.Next(0, Int32.MaxValue) +" " + j;
+                                 + random.Next(0, Int32.MaxValue) + " " + j;
                     records.Add(record);
                 }
 
@@ -177,8 +169,6 @@ namespace Benchmark
 
                 Thread.Sleep(1000);
             }
-
-//            Console.WriteLine("Finished thread id={0}", id);
         }
     }
 }
