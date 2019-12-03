@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using InfluxDB.Client;
@@ -8,6 +9,7 @@ using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Core;
 using InfluxDB.Collector;
 using Microsoft.Extensions.CommandLineUtils;
+using System.Json;
 
 /**
  * @author Pavlina Rolincova (18/11/2019 10:21)
@@ -50,6 +52,9 @@ namespace Benchmark
                             CommandOptionType.SingleValue);
             var argInfluxDb2 = cmd.Option("-influxDb2 <value>", "URL of InfluxDB v2; default: 'http://localhost:9999'",
                             CommandOptionType.SingleValue);
+
+            var bufferSize = cmd.Option("-batchSize", "batch size", CommandOptionType.SingleValue);
+            var flushInterval = cmd.Option("-flushInterval", "flush interval", CommandOptionType.SingleValue);
 
             AbstractIotWriter writer = null;
             cmd.OnExecute(async () =>
@@ -189,6 +194,21 @@ namespace Benchmark
                 });
                 Interlocked.Increment(ref Counter);
             }
+            
+            protected override async Task<double> CountInDb()
+            {
+
+                var query = "select count(*) from " + MeasurementName;
+                Console.WriteLine(query);
+                
+                var client = new WebClient();
+                var queryString = Uri.EscapeUriString("db=iot_writes&q=" + query);
+                var queryUrl = "http://localhost:8086/query?" + queryString;
+                var response = client.DownloadString(queryUrl);
+                var root = JsonValue.Parse(response);
+                var count = root["results"][0]["series"][0]["values"][0][1].ToString();
+                return Convert.ToDouble(count);
+            }
 
             protected override void Finished()
             {
@@ -201,13 +221,19 @@ namespace Benchmark
             private readonly InfluxDBClient _client;
             private readonly WriteApi _writeApi;
 
-            public ClientV2(List<CommandOption> options) : this(options, WriteOptions.CreateNew().BatchSize(100000).FlushInterval(2000).Build())
+            public ClientV2(List<CommandOption> options) : this(options, null)
             {
 
             }
 
             public ClientV2(List<CommandOption> options, WriteOptions writeOptions) : base(options, InfluxDb2Bucket, InfluxDb2Url, InfluxDb2Token)
             {
+                if (writeOptions == null)
+                {
+                    var batchSize = int.Parse(Benchmark.GetOptionValue(GetOption(options, "batchSize"), "50000"));
+                    var flushInterval = int.Parse(Benchmark.GetOptionValue(GetOption(options, "flushInterval"), "10000"));
+                    writeOptions = WriteOptions.CreateNew().BatchSize(batchSize).FlushInterval(flushInterval).Build();
+                }
                 InfluxDBClientOptions opts = InfluxDBClientOptions.Builder.CreateNew()
                     .Url(InfluxDb2Url)
                     .AuthenticateToken(InfluxDb2Token.ToCharArray())
@@ -264,6 +290,7 @@ namespace Benchmark
                 var options = InfluxDBClientOptions.Builder.CreateNew()
                                 .Url(url)
                                 .AuthenticateToken(InfluxDb2Token.ToCharArray())
+                                .TimeOut(TimeSpan.FromSeconds(180))
                                 .Build();
 
                 var client = InfluxDBClientFactory.Create(options);

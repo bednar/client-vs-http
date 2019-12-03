@@ -23,8 +23,8 @@ namespace Benchmark
         {
             MeasurementName = Benchmark.GetOptionValue(GetOption(options, "measurementName"),
                 "sensor_" + CurrentTimeMillis());
-            ThreadsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "threadsCount"), "500"));
-            SecondsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "secondsCount"), "30"));
+            ThreadsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "threadsCount"), "2000"));
+            SecondsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "secondsCount"), "60"));
             LineProtocolsCount = int.Parse(Benchmark.GetOptionValue(GetOption(options, "lineProtocolsCount"), "100"));
             SkipCount = GetOption(options, "skipCount").HasValue();
             ExpectedCount = ThreadsCount * SecondsCount * LineProtocolsCount;
@@ -59,10 +59,7 @@ namespace Benchmark
             }
 
             Console.WriteLine("Writer counter: {0}", Counter);
-            var sleep = 10000;
-            Console.WriteLine("Sleeping for: {0} ms", sleep);
-            Thread.Sleep(sleep);
-
+            
             Console.WriteLine();
             Console.WriteLine();
 
@@ -96,7 +93,7 @@ namespace Benchmark
 
         protected abstract void Finished();
 
-        private CommandOption GetOption(List<CommandOption> options, string type)
+        public CommandOption GetOption(List<CommandOption> options, string type)
         {
             return options.FindAll(o => type.Equals(o.ShortName))[0];
         }
@@ -109,18 +106,17 @@ namespace Benchmark
         }
 
         private void DoLoad(object param)
-
         {
             int id = Convert.ToInt32(param);
+            Console.Write("S:{0}",id);
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             var random = new Random();
-//            Console.WriteLine("Executing load on Thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
             for (var ii = 0; ii < SecondsCount && Execute; ii++)
             {
                 if (stopwatch.ElapsedMilliseconds >= SecondsCount * 1000)
                 {
-                    Console.WriteLine("Time elapsed for thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
+//                    Console.WriteLine("Time elapsed for thread: {0}, id={1}", Thread.CurrentThread.ManagedThreadId, id);
                     break;
                 }
 
@@ -134,8 +130,10 @@ namespace Benchmark
                 //
                 if (id == 1)
                 {
-                    Console.Write("\rwriting iterations: " + (ii + 1) + "/" + SecondsCount);
+                    Console.WriteLine("writing iterations: " + (ii + 1) + "/" + SecondsCount);
                 }
+                
+//                Console.Write(".");
 
                 //
                 // Generate data
@@ -169,6 +167,7 @@ namespace Benchmark
 
                 Thread.Sleep(1000);
             }
+            Console.Write("E:{0} ", id);
         }
     }
 }
