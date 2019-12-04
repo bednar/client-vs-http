@@ -130,7 +130,7 @@ def main():
             batch_size=batch_size,
             flush_interval=flush_interval)
     if writer_type == 'CLIENT_PYTHON_V1':
-        writer = WriterV1(influxdb.InfluxDBClient('localhost', 8086, 'root', 'root', 'iot_writes'))
+        writer = WriterV1(influxdb.InfluxDBClient('localhost', 8086, 'root', 'root', 'iot_writes'), 0, 0)
 
     stop_event = threading.Event()
 
