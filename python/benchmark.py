@@ -21,7 +21,7 @@ class Writer:
 
 
 class WriterV1(Writer):
-    def write(self, id: int, measurement_name: str, iteration: int):
+    def write(self, id: int, measurement_name: str, iteration: int, batch_size=0, flush_interval=0):
         line = "%s,id=%s temperature=%d %d" % (measurement_name, id, time.time(), iteration)
         self.client.write_points(points=line, protocol="line")
 
