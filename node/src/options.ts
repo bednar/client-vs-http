@@ -13,9 +13,11 @@ export interface Options {
   flushInterval: number;
 
   expectedSize: number;
+
+  terminated?: boolean; // set by runtime to terminate all run ning processings
 }
 
-export function parseArguments(): Options {
+export function parseOptions(): Options {
   const program = require("commander");
   function intArg(arg: string) {
     console.log(arg);
@@ -62,10 +64,10 @@ export function parseArguments(): Options {
   program.option("--bucket <bucket>", "database bucket", "my-bucket");
   return program.parse(process.argv);
 }
-export function printArguments(program: Options): void {
+export function printOptions(program: Options): void {
   program.expectedSize =
     program.threadsCount * program.secondsCount * program.lineProtocolsCount;
-  console.log(`-----------------------------
+  console.log(`------------------------------------
 measurement:        ${program.measurementName}
 threadsCount:       ${program.threadsCount}
 secondsCount:       ${program.secondsCount}
@@ -78,5 +80,6 @@ bucket:             ${program.bucket}
 batchSize:          ${program.batchSize}
 flushInterval:      ${program.flushInterval}
 
-expectedSize:       ${program.expectedSize}`);
+expectedSize:       ${program.expectedSize}
+------------------------------------`);
 }
