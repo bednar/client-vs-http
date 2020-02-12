@@ -1,5 +1,6 @@
 export interface Options {
-  measurementName: number;
+  type?: string;
+  measurementName: string;
   threadsCount: number;
   secondsCount: number;
   lineProtocolsCount: number;
@@ -69,6 +70,7 @@ export function printOptions(program: Options): void {
   program.expectedSize =
     program.threadsCount * program.secondsCount * program.lineProtocolsCount;
   console.log(`------------------------------------
+writer type:        ${program.type}
 measurement:        ${program.measurementName}
 threadsCount:       ${program.threadsCount}
 secondsCount:       ${program.secondsCount}

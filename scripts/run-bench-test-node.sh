@@ -100,7 +100,7 @@ function count_rows() {
 }
 
 #declare -a types=("CLIENT_V1_OPTIMIZED" "CLIENT_V2_OPTIMIZED" "TELEGRAF_V1" "TELEGRAF_V2" "CLIENT_GO_V1" "CLIENT_GO_V2"  "HTTP_V1" "HTTP_V2")
-declare -a types=("NODE_V2")
+declare -a types=("NODE_V2" "NODE_V1")
 
 for i in "${types[@]}"; do
   echo "Restarting docker images..."
