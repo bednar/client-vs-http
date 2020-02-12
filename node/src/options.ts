@@ -13,7 +13,7 @@ export interface Options {
   flushInterval: number;
 
   expectedSize: number;
-
+  skipCount?: boolean; // skip counting the inserted lines
   terminated?: boolean; // set by runtime to terminate all run ning processings
 }
 
@@ -62,6 +62,7 @@ export function parseOptions(): Options {
   program.option("--org <org>", "organization", "my-org");
   program.option("--token <token>", "authentication token", "my-token");
   program.option("--bucket <bucket>", "database bucket", "my-bucket");
+  program.option("--type <type>", "client type", "NODE_V2");
   return program.parse(process.argv);
 }
 export function printOptions(program: Options): void {
