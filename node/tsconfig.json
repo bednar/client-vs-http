@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "allowJs": false,
+    "esModuleInterop": true,
+    "lib": ["es6"],
+    "target": "es5",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "resolveJsonModule": true
+  },
+  "include": ["./src/**/*"]
+}
