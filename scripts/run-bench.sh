@@ -47,6 +47,10 @@ function run_benchmark() {
     dotnet "${SCRIPT_PATH}"/../csharp/Benchmark/bin/Debug/netcoreapp3.0/publish/Benchmark.dll -type "$1" \
       -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount} -skipCount
     ;;
+  *RUBY*)
+    ruby "${SCRIPT_PATH}"/../ruby/benchmark.rb --type "$1" \
+      --measurementName ${measurementName} --threadsCount ${threadsCount} --secondsCount ${secondsCount} --lineProtocolsCount ${lineProtocolsCount} --skipCount
+    ;;
   *)
     java -jar "${SCRIPT_PATH}"/../target/client-vs-http-jar-with-dependencies.jar -type "$1" \
       -measurementName ${measurementName} -threadsCount ${threadsCount} -secondsCount ${secondsCount} -lineProtocolsCount ${lineProtocolsCount} -skipCount
@@ -103,7 +107,7 @@ function count_rows() {
   esac
 }
 
-declare -a types=("TELEGRAF_V1" "TELEGRAF_V2" "CLIENT_GO_V1" "CLIENT_GO_V2" "CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2" "CLIENT_PYTHON_V1" "CLIENT_PYTHON_V2" "CLIENT_CSHARP_V1" "CLIENT_CSHARP_V2")
+declare -a types=("TELEGRAF_V1" "TELEGRAF_V2" "CLIENT_GO_V1" "CLIENT_GO_V2" "CLIENT_V1_OPTIMIZED" "CLIENT_V1" "HTTP_V1" "CLIENT_V2_OPTIMIZED" "CLIENT_V2" "HTTP_V2" "CLIENT_PYTHON_V1" "CLIENT_PYTHON_V2" "CLIENT_CSHARP_V1" "CLIENT_CSHARP_V2" "CLIENT_RUBY_V1" "CLIENT_RUBY_V2")
 
 for i in "${types[@]}"; do
   echo "Restarting docker images..."
