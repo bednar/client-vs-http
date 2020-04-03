@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"context"
-	"encoding/csv"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/fatih/color"
@@ -26,7 +25,15 @@ type WriterV1 struct {
 }
 
 type WriterV2 struct {
-	influx influxdb.Client
+	influx   influxdb2.InfluxDBClient
+	writeApi influxdb2.WriteApi
+}
+
+func NewWriterV2(client influxdb2.InfluxDBClient) *WriterV2 {
+	return &WriterV2{
+		influx:   client,
+		writeApi: client.WriteApi("my-org", "my-bucket"),
+	}
 }
 
 //
@@ -36,6 +43,8 @@ func main() {
 	writerType := flag.String("type", "CLIENT_GO_V2", "Type of writer (default 'CLIENT_GO_V2'; CLIENT_GO_V1, CLIENT_GO_V2)")
 	threadsCount := flag.Int("threadsCount", 2000, "how much Thread use to write into InfluxDB")
 	secondsCount := flag.Int("secondsCount", 30, "how long write into InfluxDB")
+	batchSize := flag.Uint("batchSize", 1000, "batch size")
+	authToken := flag.String("token", "my-token", "InfluxDB 2 authentication token")
 	lineProtocolsCount := flag.Int("lineProtocolsCount", 100, "how much data writes in one batch")
 	skipCount := flag.Bool("skipCount", false, "skip counting count")
 	measurementName := flag.String("measurementName", fmt.Sprintf("sensor_%d", time.Now().UnixNano()), "writer measure destination")
@@ -59,13 +68,8 @@ func main() {
 
 	var writer Writer
 	if *writerType == "CLIENT_GO_V2" {
-		influx, err := influxdb.New("http://localhost:9999", "my-token")
-		if err != nil {
-			panic(err)
-		}
-		writer = &WriterV2{
-			influx: *influx,
-		}
+		influx := influxdb2.NewClientWithOptions("http://localhost:9999", *authToken, influxdb2.DefaultOptions().SetBatchSize(*batchSize))
+		writer = NewWriterV2(influx)
 	} else {
 		influx, err := client.NewHTTPClient(client.HTTPConfig{
 			Addr: "http://localhost:8086",
@@ -149,42 +153,42 @@ func doLoad(wg *sync.WaitGroup, stopExecution <-chan bool, id int, measurementNa
 }
 
 func (p *WriterV2) Write(id int, measurementName string, iteration int) {
-	record := influxdb.NewRowMetric(
-		map[string]interface{}{"temperature": fmt.Sprintf("%v", time.Now().UnixNano())},
+	point := influxdb2.NewPoint(
 		measurementName,
 		map[string]string{"id": fmt.Sprintf("%v", id)},
+		map[string]interface{}{"temperature": fmt.Sprintf("%v", time.Now().UnixNano())},
 		time.Unix(0, int64(iteration)))
 
-	if _, err := p.influx.Write(context.Background(), "my-bucket", "my-org", record); err != nil {
-		//fmt.Println("Error: ", err)
-	}
+	p.writeApi.WritePoint(point)
 }
 
 func (p *WriterV2) Count(measurementName string) (int, error) {
-	query := "from(bucket:\"my-bucket\") " +
-		"|> range(start: 0, stop: now()) " +
-		"|> filter(fn: (r) => r._measurement == \"" + measurementName + "\") " +
-		"|> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") " +
-		"|> drop(columns: [\"id\", \"host\"]) " +
-		"|> count(column: \"temperature\")"
+	query := `from(bucket:"my-bucket") 
+		|> range(start: 0, stop: now()) 
+		|> filter(fn: (r) => r._measurement == "` + measurementName + `") 
+		|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+		|> drop(columns: ["id", "host"])
+		|> count(column: "temperature")`
 
-	queryResult, err := p.influx.QueryCSV(context.Background(), query, "my-org")
+	queryResult, err := p.influx.QueryApi("my-org").Query(context.Background(), query)
 	if err != nil {
 		return 0, err
 	}
-	records, err := csv.NewReader(bufio.NewReader(queryResult)).ReadAll()
-	if err != nil {
-		return 0, err
+	total := 0
+	if !queryResult.Next() {
+		if queryResult.Err() != nil {
+			return 0, queryResult.Err()
+		} else {
+			return 0, errors.New("unknown error")
+		}
+	} else {
+		total = int(queryResult.Record().ValueByKey("temperature").(int64))
 	}
-	total, err := strconv.Atoi(records[4][6])
-	if err != nil {
-		return 0, err
-	}
-
 	return total, nil
 }
 func (p *WriterV2) Close() error {
-	return p.influx.Close()
+	p.influx.Close()
+	return nil
 }
 
 func (p *WriterV1) Write(id int, measurementName string, iteration int) {
