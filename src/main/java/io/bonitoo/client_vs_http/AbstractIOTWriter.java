@@ -25,6 +25,7 @@ abstract class AbstractIOTWriter {
     private final int threadsCount;
     private final int secondsCount;
     private final int lineProtocolsCount;
+    private final int batchSize;
     private final int expectedCount;
     private volatile boolean execute = true;
     private boolean skipCount;
@@ -35,9 +36,11 @@ abstract class AbstractIOTWriter {
         threadsCount = Integer.parseInt(line.getOptionValue("threadsCount", "2000"));
         secondsCount = Integer.parseInt(line.getOptionValue("secondsCount", "30"));
         lineProtocolsCount = Integer.parseInt(line.getOptionValue("lineProtocolsCount", "100"));
+        batchSize = Integer.parseInt(line.getOptionValue("batchSize", "5000"));
         skipCount = line.hasOption("skipCount");
         expectedCount = threadsCount * secondsCount * lineProtocolsCount;
 
+	    System.out.println("batchSize:          " + batchSize);
         System.out.println("measurement:        " + measurementName);
         System.out.println("threadsCount:       " + threadsCount);
         System.out.println("secondsCount:       " + secondsCount);

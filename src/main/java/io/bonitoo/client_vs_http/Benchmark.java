@@ -62,6 +62,7 @@ public class Benchmark {
         cmdOptions.addOption(Option.builder("threadsCount").desc("how much Thread use to write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("secondsCount").desc("how long write into InfluxDB").hasArg().build());
         cmdOptions.addOption(Option.builder("lineProtocolsCount").desc("how much data writes in one batch").hasArg().build());
+        cmdOptions.addOption(Option.builder("batchSize").desc("client batch size").hasArg().build());
         cmdOptions.addOption(Option.builder("measurementName").desc("target measurement name").hasArg().build());
         cmdOptions.addOption(Option.builder("skipCount").desc("skip query count records on end of the benchmark").hasArg(false).build());
         cmdOptions.addOption(Option.builder("influxDb1").desc("URL of InfluxDB v1; default: 'http://localhost:8086'").hasArg().build());
@@ -100,7 +101,7 @@ public class Benchmark {
         } else if ("CLIENT_V1_OPTIMIZED".equals(type)) {
             BatchOptionsReactive batchOptions = BatchOptionsReactive.builder()
                     .bufferLimit(100_000_000)
-                    .batchSize(200_000)
+                    .batchSize(Integer.parseInt(line.getOptionValue("batchSize", "5000")))
                     .flushInterval(10)
                     .build();
             writer = new Client_V1(line, batchOptions);
@@ -111,7 +112,7 @@ public class Benchmark {
         } else if ("CLIENT_V2_OPTIMIZED".equals(type)) {
             WriteOptions writeOptions = WriteOptions.builder()
                     .bufferLimit(100_000_000)
-                    .batchSize(200_000)
+                    .batchSize(Integer.parseInt(line.getOptionValue("batchSize", "5000")))
                     .flushInterval(10)
                     .build();
             writer = new Client_V2(line, writeOptions);
@@ -194,7 +195,7 @@ public class Benchmark {
         private final WriteApi writeApi;
 
         Client_V2(final CommandLine line) {
-            this(line, WriteOptions.builder().bufferLimit(100_000_000).build());
+            this(line, WriteOptions.builder().bufferLimit(100_000_000).batchSize(Integer.parseInt(line.getOptionValue("batchSize", "5000"))).build());
         }
 
         Client_V2(final CommandLine line, final WriteOptions writeOptions) {
@@ -202,7 +203,6 @@ public class Benchmark {
 
             client = InfluxDBClientFactory.create(INFLUX_DB_2_URL, INFLUX_DB_2_TOKEN.toCharArray());
             writeApi = client.getWriteApi(writeOptions);
-	        System.out.println("BatchSize:  " + writeOptions.getBatchSize());
             LogManager.getLogManager().reset();
         }
 
