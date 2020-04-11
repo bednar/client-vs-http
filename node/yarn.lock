@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@bonitoo-io/influxdb-client@^0.6.0":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@bonitoo-io/influxdb-client/-/influxdb-client-0.6.1.tgz#33f251d2664625ecfd86fb9f891121079d204199"
-  integrity sha512-md8R/Gfal6DV+dq+erAmMs7SwfVcSSoKU1/nv2VpwHFmxrrwmQpg0jXx5SKunudN5AA1rPN0XnttDbjFeNHuLw==
+"@influxdata/influxdb-client@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@influxdata/influxdb-client/-/influxdb-client-1.1.0.tgz#ef64a3576bf7787e6bba2478582308a31f2c3541"
+  integrity sha512-p9Ou4YBAGPqG853UzQvhZJiH+C6/ApHbRJ6vnFH/kuaywHRHI9qe74SRsMDaMAE2C2WpmnhgSZXAg1JpGx4k7A==
 
 "@types/node@^13.7.0":
   version "13.7.0"

@@ -109,7 +109,7 @@ for i in "${types[@]}"; do
 
   echo "Warmup iteration..."
   measurementName=sensor_$RANDOM$RANDOM
-#  warmup $i &>/dev/null
+ # warmup $i &>/dev/null
 
   echo "Start benchmark "$i
   cpu_start="$(influxdb_stats $i)"
